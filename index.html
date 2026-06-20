@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jeu de Dessin</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      transition: background 0.4s ease;
+      overflow: hidden;
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 2rem;
+      font-size: 1.2rem;
+      color: rgba(255, 255, 255, 0.8);
+      letter-spacing: 0.05em;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    .category {
+      font-size: 1.4rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.85);
+      margin-bottom: 1.5rem;
+    }
+
+    .word {
+      font-size: clamp(3rem, 12vw, 8rem);
+      font-weight: 900;
+      color: #fff;
+      text-align: center;
+      text-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      padding: 0 1rem;
+      transform: scale(1);
+      transition: transform 0.15s ease, opacity 0.15s ease;
+      line-height: 1.1;
+    }
+
+    .word.pop {
+      transform: scale(0.85);
+      opacity: 0;
+    }
+
+    .counter {
+      position: fixed;
+      top: 1.5rem;
+      right: 2rem;
+      font-size: 1rem;
+      color: rgba(255,255,255,0.6);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="counter" id="counter"></div>
+  <div class="category" id="category"></div>
+  <div class="word" id="word">Appuie pour commencer !</div>
+  <div class="hint">&#128065; Touche l&rsquo;&eacute;cran pour le prochain mot</div>
+
+  <script>
+    const mots = [
+      // Animaux
+      { texte: 'Un chien',       categorie: '🐾 Animal' },
+      { texte: 'Un chat',        categorie: '🐾 Animal' },
+      { texte: 'Un éléphant',    categorie: '🐾 Animal' },
+      { texte: 'Un lion',        categorie: '🐾 Animal' },
+      { texte: 'Un dauphin',     categorie: '🐾 Animal' },
+      { texte: 'Un lapin',       categorie: '🐾 Animal' },
+      { texte: 'Une grenouille', categorie: '🐾 Animal' },
+      { texte: 'Un pingouin',    categorie: '🐾 Animal' },
+      { texte: 'Un cheval',      categorie: '🐾 Animal' },
+      { texte: 'Un papillon',    categorie: '🐾 Animal' },
+      { texte: 'Une girafe',     categorie: '🐾 Animal' },
+      { texte: 'Un crocodile',   categorie: '🐾 Animal' },
+      { texte: 'Un oiseau',      categorie: '🐾 Animal' },
+      { texte: 'Un poisson',     categorie: '🐾 Animal' },
+      { texte: 'Une tortue',     categorie: '🐾 Animal' },
+      { texte: 'Un singe',       categorie: '🐾 Animal' },
+      { texte: 'Une vache',      categorie: '🐾 Animal' },
+      { texte: 'Un cochon',      categorie: '🐾 Animal' },
+      { texte: 'Un canard',      categorie: '🐾 Animal' },
+      { texte: 'Un ours',        categorie: '🐾 Animal' },
+
+      // Métiers
+      { texte: 'Un pompier',     categorie: '👷 Métier' },
+      { texte: 'Un médecin',     categorie: '👷 Métier' },
+      { texte: 'Un cuisinier',   categorie: '👷 Métier' },
+      { texte: 'Un pilote',      categorie: '👷 Métier' },
+      { texte: 'Un pirate',      categorie: '👷 Métier' },
+      { texte: 'Un astronaute',  categorie: '👷 Métier' },
+      { texte: 'Un magicien',    categorie: '👷 Métier' },
+      { texte: 'Un policier',    categorie: '👷 Métier' },
+      { texte: 'Un clown',       categorie: '👷 Métier' },
+      { texte: 'Un superhéros',  categorie: '👷 Métier' },
+      { texte: 'Un fermier',     categorie: '👷 Métier' },
+      { texte: 'Un pêcheur',     categorie: '👷 Métier' },
+      { texte: 'Un cowboy',      categorie: '👷 Métier' },
+      { texte: 'Un chevalier',   categorie: '👷 Métier' },
+      { texte: 'Une sorcière',   categorie: '👷 Métier' },
+      { texte: 'Un robot',       categorie: '👷 Métier' },
+
+      // Situations
+      { texte: 'À la plage',              categorie: '🎨 Situation' },
+      { texte: 'Sous la pluie',           categorie: '🎨 Situation' },
+      { texte: 'Dans la forêt',           categorie: '🎨 Situation' },
+      { texte: 'Dans l\'espace',         categorie: '🎨 Situation' },
+      { texte: 'Une fête d\'anniversaire', categorie: '🎨 Situation' },
+      { texte: 'Un pique-nique',          categorie: '🎨 Situation' },
+      { texte: 'Dans un château',         categorie: '🎨 Situation' },
+      { texte: 'Dans la jungle',          categorie: '🎨 Situation' },
+      { texte: 'Sur une île',             categorie: '🎨 Situation' },
+      { texte: 'Sous l\'eau',            categorie: '🎨 Situation' },
+      { texte: 'Sur la lune',             categorie: '🎨 Situation' },
+      { texte: 'Dans le désert',          categorie: '🎨 Situation' },
+      { texte: 'Un château de sable',     categorie: '🎨 Situation' },
+      { texte: 'À la montagne',           categorie: '🎨 Situation' },
+      { texte: 'Un volcan',               categorie: '🎨 Situation' },
+      { texte: 'Un arc-en-ciel',          categorie: '🎨 Situation' },
+    ];
+
+    const couleurs = [
+      'linear-gradient(135deg, #f97316, #ef4444)',
+      'linear-gradient(135deg, #8b5cf6, #6366f1)',
+      'linear-gradient(135deg, #06b6d4, #3b82f6)',
+      'linear-gradient(135deg, #10b981, #14b8a6)',
+      'linear-gradient(135deg, #f59e0b, #f97316)',
+      'linear-gradient(135deg, #ec4899, #f43f5e)',
+      'linear-gradient(135deg, #84cc16, #22c55e)',
+      'linear-gradient(135deg, #6366f1, #8b5cf6)',
+    ];
+
+    let pile = [];
+    let indexCouleur = 0;
+    let started = false;
+
+    function melangerTableau(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function prochainMot() {
+      if (pile.length === 0) pile = melangerTableau(mots);
+      return pile.pop();
+    }
+
+    const wordEl     = document.getElementById('word');
+    const categoryEl = document.getElementById('category');
+    const counterEl  = document.getElementById('counter');
+    let total = 0;
+
+    function afficher() {
+      const mot = prochainMot();
+      total++;
+
+      wordEl.classList.add('pop');
+
+      setTimeout(() => {
+        wordEl.textContent  = mot.texte;
+        categoryEl.textContent = mot.categorie;
+        counterEl.textContent  = `#${total}`;
+
+        document.body.style.background = couleurs[indexCouleur % couleurs.length];
+        indexCouleur++;
+
+        wordEl.classList.remove('pop');
+      }, 150);
+    }
+
+    document.body.addEventListener('click', () => {
+      if (!started) {
+        started = true;
+        document.querySelector('.hint').textContent = '👆 Touche l\'écran pour le prochain mot';
+      }
+      afficher();
+    });
+  </script>
+</body>
+</html>
